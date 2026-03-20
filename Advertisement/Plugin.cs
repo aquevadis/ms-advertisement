@@ -4,7 +4,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Sharp.Modules.LocalizerManager.Shared;
 using Sharp.Shared;
 using Sharp.Shared.Definition;
 using Sharp.Shared.Enums;
@@ -27,7 +26,6 @@ public class Plugin : IModSharpModule
     private readonly string _configPath;
 
     private Config _config;
-    private ILocalizerManager? _localizer;
     private ISteamApi _steamGameServer;
     private readonly ILogger _logger;
     private readonly List<Guid> _timers = [];
@@ -93,11 +91,7 @@ public class Plugin : IModSharpModule
 
     public void OnAllModulesLoaded()
     {
-        _localizer = _modules.GetOptionalSharpModuleInterface<ILocalizerManager>(ILocalizerManager.Identity)?.Instance;
-        if (_localizer is null)
-            _logger.LogWarning("Localizer Manager not initialized or not found.");
-        else
-            _localizer.LoadLocaleFile("Advertisement");
+        
     }
 
     public void PostInit()
@@ -158,14 +152,7 @@ public class Plugin : IModSharpModule
             if (gameClient == null) continue;
 
             var message = messageKey;
-            var loc = _localizer?.GetLocalizer(gameClient);
-
-            if (loc != null)
-            {
-                var mainTrans = loc.TryGet(message);
-                if (!string.IsNullOrEmpty(mainTrans)) message = mainTrans;
-            }
-
+            
             message = _tagRegex.Replace(message, match =>
             {
                 var tagName = match.Groups[1].Value;
@@ -189,7 +176,7 @@ public class Plugin : IModSharpModule
                     }
                 }
 
-                return loc?.TryGet(tagName) ?? fullTag;
+                return fullTag;
             });
 
             message = ReplaceTags(message, globalReplacements).Replace("{PLAYERNAME}", gameClient.Name);
